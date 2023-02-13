@@ -12,21 +12,24 @@
 ;; evil - vim integration in emacs
 ;; doom-themes - cool themes for emacs
 ;; company - completion plugin
-;; ccls - ccls language server
 ;; ivy - completion plugin not only for code
 ;; use-package managing packages
 ;; ivy-xref ivy-like references in lsp
 ;; undo-tree next generation of undo/redo
 ;; tree-sitter       -+ Better highlighting
 ;; tree-sitter-langs -+
-(setq package-selected-packages '(lsp-ui tree-sitter-langs tree-sitter undo-tree ivy-xref use-package ivy ccls company which-key flycheck lsp-mode evil doom-themes))
+;; graphviz-dot-mode - convinient graphviz preview 
+
+(setq package-selected-packages '(lsp-ui tree-sitter-langs tree-sitter undo-tree
+					 ivy-xref use-package helm ivy company
+					 which-key flycheck lsp-mode evil doom-themes
+					 graphviz-dot-mode uncrustify-mode))
 
 (when (cl-find-if-not #'package-installed-p package-selected-packages)
  (mapc #' package-install package-selected-packages))
 
 ;; load theme
 (load-theme 'doom-monokai-classic t)
-
 ;; Turn off menu and tool bar
 (menu-bar-mode -1)
 (tool-bar-mode -1)
@@ -35,12 +38,13 @@
 (use-package which-key
   :config (which-key-mode 1))
 
+
+;; Enable helm
+(helm-mode 1)
+
 ;; Enable flycheck and company
 (global-company-mode)
 (global-flycheck-mode)
-
-;; Turn off flymake
-(setq-default flycheck-disabled-checkers '(c/c++-clang c/c++-cppcheck c/c++-gcc))
 
 ;; Lsp config
 (use-package lsp-mode
@@ -56,18 +60,7 @@
       company-idle-delay 0.0
       lsp-idle-delay 0.500)
 
-;; ccls config
-(use-package ccls
-  :bind ("C-l" . ccls-code-lens-mode))
 
-;; Useful function for ccls
-(defun ccls/callee () (interactive) (lsp-ui-peek-find-custom "$ccls/call" '(:callee t)))
-(defun ccls/caller () (interactive) (lsp-ui-peek-find-custom "$ccls/call"))
-(defun ccls/vars (kind) (lsp-ui-peek-find-custom "$ccls/vars" `(:kind ,kind)))
-(defun ccls/base (levels) (lsp-ui-peek-find-custom "$ccls/inheritance" `(:levels ,levels)))
-(defun ccls/derived (levels) (lsp-ui-peek-find-custom "$ccls/inheritance" `(:levels ,levels :derived t)))
-(defun ccls/member (kind) (interactive) (lsp-ui-peek-find-custom "$ccls/member" `(:kind ,kind)))
-	
 ;;(use-package cc-mode);; Enable undo-tree
 (use-package undo-tree
   :config
@@ -79,18 +72,16 @@
 (use-package evil
   :init
   (evil-mode 1)
-  :bind (:map evil-normal-state-map
-	("g r" . lsp-ui-peek-find-references)  
-	("g i" . (lambda () (interactive) (ccls/derived 1)))    ;; get direct derived classes
-	("g I" . (lambda () (interactive) (ccls/derived 1000))) ;; get all derived classes
-	("g b" . (lambda () (interactive) (ccls/base 1)))       ;; get direct base classes
-	("g B" . (lambda () (interactive) (ccls/base 1000)))    ;; get all base classes
-	("g f" . (lambda () (interactive) (ccls/member 3)))     ;; => member function / function in namespace
-	("g c" . ccls/caller)
-	("g C" . ccls/callee))
+   :bind (:map evil-normal-state-map
+  	("g r" . lsp-ui-peek-find-references))
   :config
   (setq evil-undo-system 'undo-tree))
 
+;; graphviz-dot-mode
+(use-package graphviz-dot-mode
+  :ensure t
+  :config
+  (setq graphviz-dot-indent-width 4))
 
 ;; ivy config
 (ivy-mode)
@@ -99,19 +90,21 @@
 (global-set-key (kbd "M-x") 'execute-extended-command)
 (global-set-key (kbd "C-x C-f") 'find-file)
 
-(defun my-c-mode-hook ()
-  (setq c-basic-offset 4)
-  (setq indent-tabs-mode nil)
-  (setq c-default-style "stroustrup")
-  (setq c++-tab-always-indent t)
-  (c-set-offset 'substatement-open 0)
-  (setq tab-stop-list '(4 8 12 16 20 24 28 32 36 40 44 48 52 56 60))
-  (setq tab-width 4)
+(defun my-c-mode ()
+  (setq c-basic-offset 4
+	c-default-style "linux")
+  (c-set-offset 'arglist-intro '+)
 )
 
-(add-hook 'c-mode-hook 'my-c-mode-hook)
-(add-hook 'c++-mode-hook 'my-c-mode-hook)
+;; c/c++ code style config
+(use-package cc-mode
+  :init
+  :hook ((c-mode c++-mode) . my-c-mode)
+)
 
+(use-package uncrustify-mode
+  :hook ((c-mode c++-mode) . uncrustify-mode)
+)
 
 ;; global config
 
@@ -142,6 +135,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(graphviz-dot-preview-extension "jpg")
  '(package-selected-packages '(evil doom-themes)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
