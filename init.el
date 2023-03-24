@@ -18,12 +18,15 @@
 ;; undo-tree next generation of undo/redo
 ;; tree-sitter       -+ Better highlighting
 ;; tree-sitter-langs -+
-;; graphviz-dot-mode - convinient graphviz preview 
+;; graphviz-dot-mode - convinient graphviz preview
 
-(setq package-selected-packages '(lsp-ui tree-sitter-langs tree-sitter undo-tree
-					 ivy-xref use-package helm ivy company
+(add-to-list 'auto-mode-alist '("^/usr/include/c++/12.2.1/" . c++-mode))
+
+(setq package-selected-packages '(lsp-ui tree-sitter-langs tree-sitter undo-tree helm
+					 ivy-xref use-package helm ivy company ccls
 					 which-key flycheck lsp-mode evil doom-themes
-					 graphviz-dot-mode uncrustify-mode))
+					 graphviz-dot-mode uncrustify-mode helm-xref
+					 clang-format))
 
 (when (cl-find-if-not #'package-installed-p package-selected-packages)
  (mapc #' package-install package-selected-packages))
@@ -38,13 +41,16 @@
 (use-package which-key
   :config (which-key-mode 1))
 
-
-;; Enable helm
-(helm-mode 1)
-
 ;; Enable flycheck and company
 (global-company-mode)
 (global-flycheck-mode)
+
+;; write only errors
+(setq warning-minimum-level :error)
+
+;; Lsp config
+;; Turn off flymake
+(setq-default flycheck-disabled-checkers '(c/c++-clang c/c++-cppcheck c/c++-gcc))
 
 ;; Lsp config
 (use-package lsp-mode
@@ -52,16 +58,48 @@
          (lsp-mode . lsp-enable-which-key-integration))
   :config
   (setq lsp-enable-on-type-formatting nil)
+  (setq lsp-lens-enable nil)
+  (setq lsp-log-io nil)
+  (setq lsp-use-plists t)
+  (setq lsp-prefer-flymake nil)
   :commands lsp)
 
 
-(setq gc-cons-threshold (* 1000 1024 1024)
-      read-process-output-max (* 100 1024 1024)
-      company-idle-delay 0.0
-      lsp-idle-delay 0.500)
+(setq gc-cons-threshold 1000000000
+      read-process-output-max (* 1024 1024)
+      )
+
+(use-package ccls
+  :init
+  (setq ccls-initialization-options '(:index (:comments 2) :completion (:detailedLabel t)))
+  :config
+  (setq ccls-executable "/usr/bin/ccls")
+  (setq ccls-sem-highlight-method 'overlay)
+  :bind ("C-l" . ccls-code-lens-mode)
+  :hook ((c-mode c++-mode) . (lambda () (require 'ccls) (lsp))))
+
+;; Useful function for ccls
+(defun ccls/callee () (interactive) (lsp-ui-peek-find-custom "$ccls/call" '(:callee t)))
+(defun ccls/caller () (interactive) (lsp-ui-peek-find-custom "$ccls/call"))
+(defun ccls/vars (kind) (lsp-ui-peek-find-custom "$ccls/vars" `(:kind ,kind)))
+(defun ccls/base (levels) (lsp-ui-peek-find-custom "$ccls/inheritance" `(:levels ,levels)))
+(defun ccls/derived (levels) (lsp-ui-peek-find-custom "$ccls/inheritance" `(:levels ,levels :derived t)))
+(defun ccls/member (kind) (interactive) (lsp-ui-peek-find-custom "$ccls/member" `(:kind ,kind)))
 
 
-;;(use-package cc-mode);; Enable undo-tree
+(use-package lsp-ui
+  :config
+   (setq lsp-ui-doc-include-signature nil)  ; don't include type signature in the child frame
+   (setq lsp-ui-sideline-show-symbol t)  ; don't show symbol on the right of info
+   (setq lsp-ui-doc-enable t)
+   (setq lsp-ui-sideline-enable t)
+   (setq lsp-ui-sideline-show-code-actions t)
+   (setq lsp-ui-sideline-show-hover t)
+   (setq lsp-modeline-code-actions-enable t)
+   (setq lsp-eldoc-enable-hover t)
+   (setq lsp-eldoc-render-all t)
+)
+
 (use-package undo-tree
   :config
   (global-undo-tree-mode)
@@ -72,8 +110,21 @@
 (use-package evil
   :init
   (evil-mode 1)
-   :bind (:map evil-normal-state-map
-  	("g r" . lsp-ui-peek-find-references))
+  :bind (
+	 :map evil-normal-state-map
+	      ("g d" . lsp-ui-peek-find-definitions)
+  	      ("g r" . lsp-ui-peek-find-references)
+	      ("g h" . lsp-ui-doc-show)
+	      ("g v" . (lambda () (interactive) (ccls/member 0)))       ;; get members of class / namespace
+	      ("g i" . (lambda () (interactive) (ccls/derived 1)))    ;; get direct derived classes
+	      ("g I" . (lambda () (interactive) (ccls/derived 1000))) ;; get all derived classes
+	      ("g b" . (lambda () (interactive) (ccls/base 1)))       ;; get direct base classes
+	      ("g B" . (lambda () (interactive) (ccls/base 1000)))    ;; get all base classes
+	      ("g f" . (lambda () (interactive) (ccls/member 3)))     ;; => member function / function in namespace
+	      ("g c" . ccls/caller)
+	      ("g C" . ccls/callee)
+
+	)
   :config
   (setq evil-undo-system 'undo-tree))
 
@@ -94,6 +145,8 @@
   (setq c-basic-offset 4
 	c-default-style "linux")
   (c-set-offset 'arglist-intro '+)
+  (c-set-offset 'substatement-open nil)
+  (c-set-offset 'inline-open nil)
 )
 
 ;; c/c++ code style config
@@ -102,13 +155,58 @@
   :hook ((c-mode c++-mode) . my-c-mode)
 )
 
-(use-package uncrustify-mode
-  :hook ((c-mode c++-mode) . uncrustify-mode)
-)
+;; clang-format config
+
+(defun clang-format-save-hook-for-this-buffer ()
+  "Create a buffer local save hook."
+  (add-hook 'before-save-hook
+            (lambda ()
+              (when (locate-dominating-file "." ".clang-format")
+                (clang-format-buffer))
+              ;; Continue to save.
+              nil)
+            nil
+            ;; Buffer local hook.
+            t))
+
+(use-package clang-format
+  :config
+  (setq clang-format-style "file")
+  :hook
+  ((c-mode c++-mode) . clang-format-save-hook-for-this-buffer)
+  )
+
+;; (use-package uncrustify-mode
+;;   :hook ((c-mode c++-mode) . uncrustify-mode)
+;; )
+
+;; Enable helm
+
+
+(use-package helm
+  :init
+  (helm-mode 1)
+  :bind*
+  ("C-c C-f" . helm-find-files)
+  (
+  :map helm-map
+  ("C-j" . helm-next-line)
+  ("C-k" . helm-previous-line)
+  ("C-;" . helm-execute-persistent-action)
+  )
+  )
+
+(define-key global-map (kbd "C-c C-f") #'helm-find-files)
+
+(use-package tree-sitter
+  :hook
+  ((c-mode c++-mode) . tree-sitter-hl-mode)
+  )
+
 
 ;; global config
 
-;; (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
+(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
 (setq backup-directory-alist '((".*" . "~/.emacs.d/autosaves/")))
 (setq auto-save-file-name-transforms `((".*" "~/.emacs.d/autosaves/" t)))
 (make-directory "~/.emacs.d/autosaves/" t)
@@ -136,7 +234,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(graphviz-dot-preview-extension "jpg")
- '(package-selected-packages '(evil doom-themes)))
+ '(package-selected-packages '(cmake-mode helm-lsp evil doom-themes)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
