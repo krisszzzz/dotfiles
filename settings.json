@@ -1,0 +1,151 @@
+{
+    /**
+     * Minimal Code
+     */
+    "apc.electron": {
+        "titleBarStyle": "hidden",
+        "trafficLightPosition": {
+            "x": 9,
+            "y": 9
+        }
+    },
+    "apc.stylesheet": {
+        ".decorationsOverviewRuler": "display: none;",
+        ".editor-group-container .title *": "display: none;",
+        ".editor-group-container .title": "pointer-events: none;",
+        ".editor-group-container.empty": "-webkit-app-region: drag;",
+        ".monaco-editor .scroll-decoration": "box-shadow: none;"
+    },
+    "vim.normalModeKeyBindingsNonRecursive": [
+        {
+            "before": [
+                "g",
+                "r"
+            ],
+            "commands": [
+                "editor.action.referenceSearch.trigger"
+            ]
+        },
+        {
+            "before": [
+                "<space>"
+            ],
+            "commands": [
+                "vspacecode.space"
+            ]
+        },
+        {
+            "before": [
+                ","
+            ],
+            "commands": [
+                "vspacecode.space",
+                {
+                    "command": "whichkey.triggerKey",
+                    "args": "m"
+                }
+            ]
+        }
+    ],
+    "debug.console.fontSize": 15,
+    "debug.console.lineHeight": 36,
+    "debug.toolBarLocation": "docked",
+    "diffEditor.ignoreTrimWhitespace": false,
+    "diffEditor.renderSideBySide": false,
+    "editor.bracketPairColorization.enabled": false,
+    "editor.colorDecorators": false,
+    "editor.cursorStyle": "line-thin",
+    "editor.fontLigatures": true,
+    "editor.fontSize": 15,
+    "editor.formatOnSave": true,
+    "editor.glyphMargin": false,
+    "editor.gotoLocation.multipleDeclarations": "goto",
+    "editor.gotoLocation.multipleDefinitions": "goto",
+    "editor.gotoLocation.multipleImplementations": "goto",
+    "editor.gotoLocation.multipleReferences": "goto",
+    "editor.gotoLocation.multipleTypeDefinitions": "goto",
+    "editor.guides.indentation": false,
+    "editor.hideCursorInOverviewRuler": true,
+    "editor.lineNumbers": "on",
+    "editor.matchBrackets": "near",
+    "editor.minimap.enabled": false,
+    "editor.occurrencesHighlight": "off",
+    "editor.renderLineHighlight": "none",
+    "editor.renderWhitespace": "none",
+    "editor.scrollbar.horizontalScrollbarSize": 8,
+    "editor.scrollbar.verticalScrollbarSize": 8,
+    "explorer.compactFolders": false,
+    "explorer.decorations.badges": false,
+    "explorer.openEditors.visible": 0,
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
+    "markdown.preview.markEditorSelection": false,
+    "problems.decorations.enabled": false,
+    "scm.diffDecorations": "none",
+    "terminal.integrated.cursorStyle": "line",
+    "terminal.integrated.enableMultiLinePasteWarning": false,
+    "terminal.integrated.fontSize": 15,
+    "terminal.integrated.lineHeight": 1.85,
+    "window.autoDetectColorScheme": true,
+    "window.newWindowDimensions": "inherit",
+    "window.title": "${rootName}",
+    "window.titleBarStyle": "native",
+    "workbench.colorTheme": "GitHub Dark Default",
+    "workbench.editor.revealIfOpen": true,
+    "workbench.editor.showTabs": "single",
+    "workbench.list.horizontalScrolling": true,
+    "workbench.preferredDarkColorTheme": "GitHub Dark Default",
+    "workbench.preferredLightColorTheme": "GitHub Light Default",
+    "workbench.startupEditor": "none",
+    "workbench.tips.enabled": false,
+    "workbench.tree.indent": 16,
+    "workbench.tree.renderIndentGuides": "none",
+    "workbench.activityBar.location": "hidden",
+    "workbench.editor.enablePreview": false,
+    "vim.easymotion": true,
+    "vim.useSystemClipboard": true,
+    "vim.visualModeKeyBindingsNonRecursive": [
+        {
+            "before": [
+                "<space>"
+            ],
+            "commands": [
+                "vspacecode.space"
+            ]
+        },
+        {
+            "before": [
+                ","
+            ],
+            "commands": [
+                "vspacecode.space",
+                {
+                    "command": "whichkey.triggerKey",
+                    "args": "m"
+                }
+            ]
+        },
+        {
+            "before": [
+                ">"
+            ],
+            "commands": [
+                "editor.action.indentLines"
+            ]
+        },
+        {
+            "before": [
+                "<"
+            ],
+            "commands": [
+                "editor.action.outdentLines"
+            ]
+        }
+    ],
+    "workbench.editor.autoLockGroups": {
+        "default": true
+    },
+    "clangd.arguments": [
+        "--header-insertion=never"
+    ],
+}
